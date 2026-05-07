@@ -71,6 +71,37 @@ Lead Input → Orchestrator (GPT-4o)
 - **Wholesale/B2B lead qualification** — Score retailer enquiries against distribution criteria
 - **Influencer outreach** — Research influencers, score brand fit, generate personalised collaboration proposals
 
+## Workflow Screenshots
+
+### Orchestrator
+![Orchestrator](docs/screenshots/P01%20-%20Lead%20Intelligence%20Orchestrator.png)
+
+### Research Agent
+![Research Agent](docs/screenshots/P01%20-%20Research%20Agent.png)
+
+### Scoring Agent
+![Scoring Agent](docs/screenshots/P01%20-%20Scoring%20Agent.png)
+
+### Personalisation Agent
+![Personalisation Agent](docs/screenshots/P01%20-%20Personalisation%20Agent.png)
+
+### CRM Agent
+![CRM Agent](docs/screenshots/P01%20-%20CRM%20Agent.png)
+
+### HITL Approval Handler
+![HITL Approval Handler](docs/screenshots/P01%20-%20HITL%20Approval%20Handler.png)
+
+### HITL Approval Email
+![HITL Approval Email](docs/screenshots/HLTL%20EMail%20message.png)
+
+### RAG Document Loader
+![RAG Document Loader](docs/screenshots/P01%20-%20RAG%20Document%20Loader.png)
+
+### Airtable CRM Output
+![Airtable](docs/screenshots/Airtable.png)
+
+---
+
 ## Why This Architecture Matters (Portfolio Value)
 
 This project demonstrates production-grade AI engineering patterns that interviewers look for:
