@@ -1,0 +1,407 @@
+{
+  "name": "P01 - Scoring Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        224
+      ],
+      "id": "d85f7984-d01d-46d7-ab6a-ebd1efc8c00f",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "2RNi9vyXhnG6HUiv",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Search the ICP knowledge base for criteria to score leads against\n",
+        "operation": "executeQuery",
+        "query": "SELECT text FROM p01_documents WHERE metadata->>'type' = 'icp'\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        224
+      ],
+      "id": "cefa9c33-9668-4549-a36f-2f960c60ed0b",
+      "name": "search_icp_criteria",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "session_id",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        0
+      ],
+      "id": "868812ef-3fc6-4e82-bb3e-d6dbb850faff",
+      "name": "Receive Session ID"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "id",
+              "value": "={{ $json.session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        256,
+        0
+      ],
+      "id": "f2df8648-8710-4a62-adec-ce48656af458",
+      "name": "Read Research Output",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Score this lead based on the research below:\n\n{{ $json.research_output }}",
+        "options": {
+          "systemMessage": "You are a lead scoring agent. Your job is to score a lead 1-10 \nagainst our Ideal Customer Profile (ICP) criteria.\n\nScoring guide:\n- 8-10: Strong fit, high priority\n- 5-7: Moderate fit, worth pursuing\n- 1-4: Poor fit, deprioritise\n\nAlways return your response in this exact format:\nSCORE: [number]\nREASONING: [2-3 sentences explaining the score]\n",
+          "maxIterations": 20
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "87eaa9ce-385a-4a5a-9243-8abf95070aa1",
+      "name": "Score Lead Against ICP"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $input.first().json.output;\nconst match = output.match(/SCORE:\\s*(\\d+)/);\nconst score = match ? parseInt(match[1]) : null;\n\nreturn [{ json: { score: score, full_output: output } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "a4ad141f-cfda-4ce2-9961-250c1c6c5cc2",
+      "name": "Extract Score and Reasoning"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Receive Session ID').item.json.session_id }}",
+            "score": "={{ $json.score }}",
+            "score_reasoning": "={{ $json.full_output }}",
+            "status": "scoring_done"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_data",
+              "displayName": "lead_data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "research_output",
+              "displayName": "research_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score_reasoning",
+              "displayName": "score_reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "outreach_draft",
+              "displayName": "outreach_draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "crm_status",
+              "displayName": "crm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "892181f0-c29c-4ae2-a070-ce98fab2999f",
+      "name": "Save Score",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Workflow note\n**Scores the lead 1-10 against ICP criteria using Claude Sonnet and RAG knowledge base. Writes score and score_reasoning to Postgres.** ",
+        "width": 864
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "5f654a2b-8132-43c5-815a-e1fd27d7023e",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Receive Session ID": [
+      {
+        "json": {
+          "session_id": 1
+        }
+      }
+    ],
+    "Score Lead Against ICP": [
+      {
+        "json": {
+          "output": "I was unable to retrieve the specific ICP criteria from the knowledge base. However, based on typical AI automation service provider ICP characteristics, I can score this lead:\n\n**SCORE: 9**\n\n**REASONING:** Stripe is an exceptionally strong fit for AI automation services. As a high-growth fintech company valued at $95B+ with 2,000+ employees, they have the scale and resources to invest in AI solutions. They've already publicly announced AI initiatives (fraud detection, transaction streamlining), demonstrating active interest and budget allocation for AI automation. The contact is a Head of Operations, a key decision-maker who would oversee automation implementation across fraud detection, customer support, and data analysis—all high-value use cases with clear ROI potential."
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Score Lead Against ICP",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_icp_criteria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Score Lead Against ICP",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Session ID": {
+      "main": [
+        [
+          {
+            "node": "Read Research Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Research Output": {
+      "main": [
+        [
+          {
+            "node": "Score Lead Against ICP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Lead Against ICP": {
+      "main": [
+        [
+          {
+            "node": "Extract Score and Reasoning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Score and Reasoning": {
+      "main": [
+        [
+          {
+            "node": "Save Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Score": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e4c96928-b72c-4638-bc15-80cfb8a332fa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "23b36ea15f13856ccbe210d20171d39de2bd8cd2a47658ef3391b4160d9fda3e"
+  },
+  "id": "5rffncy6kOxgqgHH",
+  "tags": []
+}

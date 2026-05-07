@@ -1,0 +1,448 @@
+{
+  "name": "P01 - Research Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        528
+      ],
+      "id": "30ff08d6-8c78-4d68-9e83-053045da6c7f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "coxfC3HmIHl1epuj",
+          "name": "Google Gemini Api"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "toolDescription": "Scrapes a website URL and returns the page content\n",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        224
+      ],
+      "id": "cd6d86d7-55ce-4a8b-849b-b8874abfae6f",
+      "name": "scrape_website",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        240
+      ],
+      "id": "4d8f891e-f5ab-4d06-acb8-67ef95283953",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "tpLexLvupUhqW592",
+          "name": "OpenAi API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "session_id",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        -16
+      ],
+      "id": "32a9d2bd-b111-4ae8-bf0f-b9cf764ed00a",
+      "name": "Receive Session ID"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "id",
+              "value": "={{ $json.session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -64,
+        -16
+      ],
+      "id": "d67f78c6-72cb-458b-8157-c6b91a006ef1",
+      "name": "Read Lead Data",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Research this lead:\nCompany: {{ $('Read Lead Data').item.json.lead_data.body.company }}\nWebsite: {{ $('Read Lead Data').item.json.lead_data.body.domain }}\nContact: {{ $('Read Lead Data').item.json.lead_data.body.name }}\nEmail: {{ $('Read Lead Data').item.json.lead_data.body.email }}\nWeb research results: {{ $json.results.map(r => r.title + '\\n' + r.content).join('\\n\\n---\\n\\n')}}\n",
+        "options": {
+          "systemMessage": "You are a lead research specialist for an AI automation consultancy.\n\nYou will be given web research results about a company. Your job is to analyse those results and write a structured research summary.\n\nRULES:\n- Only use the research results provided. Do not use your training knowledge.\n- If information is not in the provided results, write \"Not found\".\n- Be concise. One to two sentences per section maximum.\n\nOUTPUT FORMAT:\nCOMPANY OVERVIEW: [What the company does]\nCOMPANY SIZE & INDUSTRY: [Size, sector]\nRECENT NEWS: [Funding, launches, leadership changes in 2024-2025]\nTECHNOLOGY SIGNALS: [Known tools, platforms, or tech stack]\nKEY DECISION MAKERS: [Names and titles if found]\nAI AUTOMATION FIT: [Why they might need AI automation]\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        -16
+      ],
+      "id": "1a427c94-5902-4956-87af-1b48eb190172",
+      "name": "Research Company"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "research_output": "={{ $json.output }}",
+            "status": "research_done",
+            "updated_at": "={{ new Date().toISOString() }}",
+            "id": "={{ $('Receive Session ID').item.json.session_id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_data",
+              "displayName": "lead_data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "research_output",
+              "displayName": "research_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score_reasoning",
+              "displayName": "score_reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "outreach_draft",
+              "displayName": "outreach_draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "crm_status",
+              "displayName": "crm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        736,
+        -16
+      ],
+      "id": "1c895d6c-732a-4581-95cd-87eb9374d46c",
+      "name": "Save Research Output",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Workflow note\n**Researches the lead company using Tavily web search. Reads lead_data from Postgres, writes research_output back.** ",
+        "width": 608
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -336,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "a9fcdb31-4e0b-4537-b135-242b71edee27",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        320
+      ],
+      "id": "f2dd5953-84d3-42e5-821e-f54649604db6",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "Xz7dedWzvBijCwjF",
+          "name": "Tavily API"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "query": "={{ $json.lead_data.body.company }} {{ $json.lead_data.body.domain }} company overview AI automation ",
+        "options": {
+          "max_results": 5
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -16
+      ],
+      "id": "39b5707d-a625-4c88-8037-7f6cea178ced",
+      "name": "Search",
+      "credentials": {
+        "tavilyApi": {
+          "id": "Xz7dedWzvBijCwjF",
+          "name": "Tavily API"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Receive Session ID": [
+      {
+        "json": {
+          "session_id": 9
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "scrape_website": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research Company",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Research Company",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Session ID": {
+      "main": [
+        [
+          {
+            "node": "Read Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Company": {
+      "main": [
+        [
+          {
+            "node": "Save Research Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Search": {
+      "main": [
+        [
+          {
+            "node": "Research Company",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b04c609f-b19f-4028-ad59-e5954cfc4c10",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "23b36ea15f13856ccbe210d20171d39de2bd8cd2a47658ef3391b4160d9fda3e"
+  },
+  "id": "z8qAjTkTd9SL6JxR",
+  "tags": []
+}

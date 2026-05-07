@@ -1,0 +1,142 @@
+{
+  "name": "P01 - RAG Document Loader",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -16
+      ],
+      "id": "8a236a33-b62b-4299-97ee-18445725cfd0",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      content: `Ideal Customer Profile:\n- Company size: 10-500 employees\n- Industries: SaaS, fintech, e-commerce, marketing agencies\n- Uses: CRM tools (HubSpot, Salesforce, Pipedrive)\n- Budget: £5,000-£50,000 for automation projects\n- Pain points: manual lead processing, slow outreach, inconsistent follow-up\n- Green flags: recently funded, hiring sales roles, expanding to new markets\n- Red flags: under 5 employees, no online presence, government/public sector`\n    }\n  },\n  {\n    json: {\n      content: `Services Offered:\n- AI automation workflow design and build (n8n, Make)\n- Agentic AI systems — multi-agent orchestration for business processes\n- LLM integration — OpenAI, Claude, Gemini API setup and prompt engineering\n- RAG pipeline setup — document ingestion, vector search, contextual retrieval\n- CRM automation — lead enrichment, scoring, automated outreach`\n    }\n  },\n  {\n    json: {\n      content: `Competitors:\n- Clay.com — lead enrichment platform, no custom agent logic\n- Apollo.io — outbound sales tool, template-based outreach\n- Instantly.ai — cold email automation, no research/scoring layer\nOur edge: fully custom multi-agent pipeline with RAG-driven scoring, not a template tool`\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        -16
+      ],
+      "id": "b698eeed-d09c-4e5d-939b-3ae82da9cba2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "p01_documents",
+        "embeddingBatchSize": 100,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        -16
+      ],
+      "id": "7ca2b7e0-e1af-4c0d-bb39-3caa727c715c",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        208
+      ],
+      "id": "4e11d36d-2a15-450e-98e5-49f5b3b65aef",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        208
+      ],
+      "id": "2cfd5cc7-a484-4167-bbdc-d690ff8e23e0",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "tpLexLvupUhqW592",
+          "name": "OpenAi API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "96f42b37-90c8-4c85-8dc2-8b63703d7543",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "23b36ea15f13856ccbe210d20171d39de2bd8cd2a47658ef3391b4160d9fda3e"
+  },
+  "id": "Rx9NOOVsn24RVjqG",
+  "tags": []
+}

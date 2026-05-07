@@ -1,0 +1,452 @@
+{
+  "name": "P01 - Lead Intelligence Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        -80
+      ],
+      "id": "180a2def-b330-454a-b0ef-a78752a34735",
+      "name": "Lead Intake",
+      "webhookId": "6c58adc4-0d44-4ee8-8369-a351449a09b3"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "Pending",
+            "created_at": "={{ new Date().toISOString() }}",
+            "lead_data": "={{ JSON.stringify($json) }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "lead_data",
+              "displayName": "lead_data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "research_output",
+              "displayName": "research_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score_reasoning",
+              "displayName": "score_reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "outreach_draft",
+              "displayName": "outreach_draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "crm_status",
+              "displayName": "crm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -176,
+        -80
+      ],
+      "id": "3411969d-aa4c-47dc-9fb2-96cf67e0d9b9",
+      "name": "Create Lead Session",
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "z8qAjTkTd9SL6JxR",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/z8qAjTkTd9SL6JxR",
+          "cachedResultName": "P01 - Research Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.id }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        -80
+      ],
+      "id": "413953d8-8915-49b7-bdc3-1738dd1e9cb3",
+      "name": "Run Research Agent"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "5rffncy6kOxgqgHH",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/5rffncy6kOxgqgHH",
+          "cachedResultName": "P01 - Scoring Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.id }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        -80
+      ],
+      "id": "1a5eca23-7139-4493-9882-98d63a353976",
+      "name": "Run Scoring Agent"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "VJor5qDR2PCvubnc",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/VJor5qDR2PCvubnc",
+          "cachedResultName": "P01 - Personalisation Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.id }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        -80
+      ],
+      "id": "a4a29294-2645-45e5-a37c-9b788de91ab4",
+      "name": "Run Personalisation Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.rinoyn8n.com/webhook/4ce6a6a6-5854-4b3e-ba00-23c613a68ab9",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session_id",
+              "value": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        -80
+      ],
+      "id": "8eb759c1-23f6-427e-9335-13edd9ddc9cf",
+      "name": "Trigger HITL Approval"
+    },
+    {
+      "parameters": {
+        "content": "## Workflow note\nEntry point for the lead intelligence pipeline. Receives lead via webhook, creates a Postgres session, runs all specialist agents in sequence, then triggers HITL approval.",
+        "width": 800
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -400,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "89d5e017-5277-4c23-b6d7-15d329c71604",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Lead Intake": [
+      {
+        "json": {
+          "name": "Sarah Johnson",
+          "email": "sarah@notion.so",
+          "company": "Notion",
+          "domain": "notion.so",
+          "job_title": "VP of Operations",
+          "linkedin": "https://www.linkedin.com/in/sarahjohnson",
+          "source": "LinkedIn"
+        }
+      }
+    ],
+    "Run Research Agent": [
+      {
+        "json": {
+          "id": 6,
+          "lead_data": {
+            "name": "Sarah Johnson",
+            "email": "sarah@notion.so",
+            "domain": "notion.so",
+            "source": "LinkedIn",
+            "company": "Notion",
+            "linkedin": "https://www.linkedin.com/in/sarahjohnson",
+            "job_title": "VP of Operations"
+          },
+          "research_output": "It looks like you haven't provided the company name, website, or contact information. Please share these details, and I'll be able to assist you with the research you need.",
+          "score": null,
+          "score_reasoning": null,
+          "outreach_draft": null,
+          "crm_status": null,
+          "status": "research_done",
+          "created_at": "2026-04-10T12:04:07.867Z",
+          "updated_at": "2026-04-10T12:04:11.818Z"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Lead Intake": {
+      "main": [
+        [
+          {
+            "node": "Create Lead Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead Session": {
+      "main": [
+        [
+          {
+            "node": "Run Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Run Scoring Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Scoring Agent": {
+      "main": [
+        [
+          {
+            "node": "Run Personalisation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Personalisation Agent": {
+      "main": [
+        [
+          {
+            "node": "Trigger HITL Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger HITL Approval": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c3d5a567-89e9-488c-a956-3c7cf111f288",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "23b36ea15f13856ccbe210d20171d39de2bd8cd2a47658ef3391b4160d9fda3e"
+  },
+  "id": "BSO4Mozlsx35od4N",
+  "tags": []
+}

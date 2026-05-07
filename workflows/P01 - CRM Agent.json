@@ -1,0 +1,481 @@
+{
+  "name": "P01 - CRM Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "session_id",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "4549df0e-f205-4dda-8141-3ed10f399ff2",
+      "name": "Receive Session ID"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "id",
+              "value": "={{ $json.session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        160,
+        0
+      ],
+      "id": "73407098-349a-4017-914e-bac836b3b543",
+      "name": "Read Full Session",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4714efb2-955f-45f5-b5f4-0b397c87e07e",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        384,
+        0
+      ],
+      "id": "36715575-1526-4ac2-8e44-03beb4b4ea54",
+      "name": "Pin Session ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "const session = $('Read Full Session').first().json\nconst leadData = typeof session.lead_data === 'string'\n  ? JSON.parse(session.lead_data)\n  : session.lead_data;\n\nreturn [{\n  json: {\n    name: leadData.contact_name,\n    company: leadData.company_name,\n    research_summary: session.research_output,\n    lead_score: session.score,\n    score_reasoning: session.score_reasoning,\n    outreach_draft: session.outreach_draft,\n    status: 'approved',\n    source: 'Lead Intelligence System'\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "e60721a8-ed2b-4336-aa9a-ce9eaf03275a",
+      "name": "Format CRM Payload"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appQOaucO41fQkBGS",
+          "mode": "list",
+          "cachedResultName": "P01 Lead Intelligence",
+          "cachedResultUrl": "https://airtable.com/appQOaucO41fQkBGS"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblmH7DKrxqikAuIl",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appQOaucO41fQkBGS/tblmH7DKrxqikAuIl"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead Score": "={{ $json.lead_score }}",
+            "Name": "={{ $('Read Full Session').item.json.lead_data.body.name }}",
+            "Company": "={{ $('Read Full Session').item.json.lead_data.body.company }}",
+            "Research Summary": "={{ $json.research_summary }}",
+            "Score Reasoning\t": "={{ $json.score_reasoning }}",
+            "Outreach Draft\t": "={{ $json.outreach_draft }}",
+            "Status": "={{ $json.status }}",
+            "Source": "={{ $json.source }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Research Summary",
+              "displayName": "Research Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Score Reasoning\t",
+              "displayName": "Score Reasoning\t",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Outreach Draft\t",
+              "displayName": "Outreach Draft\t",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "23459ade-a4d9-4703-adb4-22cb33b84de2",
+      "name": "Create Lead Record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "0gO0GGHH1nTbYWXb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Pin Session ID').item.json.id }}",
+            "status": "=Completed",
+            "crm_status": "Written"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_data",
+              "displayName": "lead_data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "research_output",
+              "displayName": "research_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score_reasoning",
+              "displayName": "score_reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "outreach_draft",
+              "displayName": "outreach_draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "crm_status",
+              "displayName": "crm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "fee59971-756d-463d-b003-f545b353ad5b",
+      "name": "Mark as Completed",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Workflow note\n**Reads all enriched lead data from Postgres and writes a complete record to Airtable. Only runs after human approval.**",
+        "width": 672
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -48,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "c17a27fa-a26c-428a-80f8-8867eedb171a",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Receive Session ID": [
+      {
+        "json": {
+          "session_id": 16
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Receive Session ID": {
+      "main": [
+        [
+          {
+            "node": "Read Full Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Full Session": {
+      "main": [
+        [
+          {
+            "node": "Pin Session ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pin Session ID": {
+      "main": [
+        [
+          {
+            "node": "Format CRM Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format CRM Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Lead Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead Record": {
+      "main": [
+        [
+          {
+            "node": "Mark as Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "442221cc-0630-43d8-ba3f-93083cbeea67",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "23b36ea15f13856ccbe210d20171d39de2bd8cd2a47658ef3391b4160d9fda3e"
+  },
+  "id": "aAgYTDUZRglVS6Ox",
+  "tags": []
+}

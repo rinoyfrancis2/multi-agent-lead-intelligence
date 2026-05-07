@@ -1,0 +1,452 @@
+{
+  "name": "P01 - HITL Approval Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "4ce6a6a6-5854-4b3e-ba00-23c613a68ab9",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ce63ad13-f0e8-46f4-8963-7237fb513e62",
+      "name": "Receive Session ID",
+      "webhookId": "4ce6a6a6-5854-4b3e-ba00-23c613a68ab9"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "id",
+              "value": "={{ $json.body.session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        0
+      ],
+      "id": "939e5e1f-e1e6-43c3-a49f-80dbb8918b0b",
+      "name": "Read Session Data",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "rinoyfrancis2job@gmail.com",
+        "subject": "=[APPROVAL NEEDED] Outreach draft for {{ $json.lead_data.body.company }}",
+        "message": "=<h2>New Lead — Approval Required</h2>\n\n<table style=\"font-family:Arial,sans-serif;font-size:14px;\">\n  <tr><td><strong>Company:</strong></td><td>{{ $json.lead_data.body.company }}</td></tr>\n  <tr><td><strong>Contact:</strong></td><td>{{ $json.lead_data.body.name }}</td></tr>\n  <tr><td><strong>Email:</strong></td><td>{{ $json.lead_data.body.email }}</td></tr>\n  <tr><td><strong>Score:</strong></td><td>{{ $json.score }}/10</td></tr>\n</table>\n\n<h3>Score Reasoning:</h3>\n<p>{{ $json.score_reasoning }}</p>\n\n<h3>Outreach Draft:</h3>\n<p>{{ $json.outreach_draft }}</p>\n\n<hr>\n\n<table>\n  <tr>\n    <td style=\"padding:10px;\">\n      <a href=\"{{ $execution.resumeUrl }}&approved=true\" style=\"background-color:#22c55e;color:white;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:15px;\">✅ APPROVE</a>\n    </td>\n    <td style=\"padding:10px;\">\n      <a href=\"{{ $execution.resumeUrl }}&approved=false\" style=\"background-color:#ef4444;color:white;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:15px;\">❌ REJECT</a>\n    </td>\n  </tr>\n</table>\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "75f07b9e-a058-4c73-887b-220b0a5a7882",
+      "name": "Send Approval Email",
+      "webhookId": "40389b2b-400b-4bea-a952-2670343de39b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EWniJmxdb6qvURGg",
+          "name": "Gmail OAuth API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "responseMode": "lastNode",
+        "responseData": "noData",
+        "limitWaitTime": true,
+        "resumeUnit": "days",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "ac06ba0e-e6bf-4858-b661-0abf549f8f65",
+      "name": "Wait for Human Decision",
+      "webhookId": "03c0dbf5-f9e3-4d5d-b5a0-643cc3b26721"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "p01_lead_sessions",
+          "mode": "list",
+          "cachedResultName": "p01_lead_sessions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Read Session Data').first().json.id }}",
+            "updated_at": "={{ new Date().toISOString() }}",
+            "status": "={{ $json.query.approved === 'true' ? 'approved' : 'rejected' }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_data",
+              "displayName": "lead_data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "research_output",
+              "displayName": "research_output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score_reasoning",
+              "displayName": "score_reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "outreach_draft",
+              "displayName": "outreach_draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "crm_status",
+              "displayName": "crm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        896,
+        0
+      ],
+      "id": "e5bd44e1-3bf6-4993-89e2-1d80e2c52164",
+      "name": "Save Approval Status",
+      "credentials": {
+        "postgres": {
+          "id": "DRMgUDKdCyTatszN",
+          "name": "Postgres API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e843a516-9a26-4fcf-9031-595f3901e0eb",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "073148ca-8e9e-4867-8566-299397dc1350",
+      "name": "Check Approval Decision"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "aAgYTDUZRglVS6Ox",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/aAgYTDUZRglVS6Ox",
+          "cachedResultName": "P01 - CRM Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $('Save Approval Status').item.json.id }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "a5430af5-6414-48c6-965f-7eeba3a00a29",
+      "name": "Run CRM Agent"
+    },
+    {
+      "parameters": {
+        "content": "## Workflow note\n**Sends approval email with outreach draft to Rinoy. Pauses until approve/reject link is clicked. On approval, triggers CRM Agent.** ",
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "9cb26c9c-e3da-4239-a798-53e9c5aed211",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {
+    "Receive Session ID": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.rinoyn8n.com",
+            "user-agent": "axios/1.13.5",
+            "content-length": "17",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "84.8.155.137",
+            "cf-ipcountry": "GB",
+            "cf-ray": "9f7fc552eb57950f-LHR",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "8e8dcab1-9f1d-4735-b38d-ce9c785f3fe1",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "x-forwarded-for": "84.8.155.137",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "session_id": 11
+          },
+          "webhookUrl": "https://n8n.rinoyn8n.com/webhook/4ce6a6a6-5854-4b3e-ba00-23c613a68ab9",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Receive Session ID": {
+      "main": [
+        [
+          {
+            "node": "Read Session Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Session Data": {
+      "main": [
+        [
+          {
+            "node": "Send Approval Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Approval Email": {
+      "main": [
+        [
+          {
+            "node": "Wait for Human Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Human Decision": {
+      "main": [
+        [
+          {
+            "node": "Save Approval Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Approval Status": {
+      "main": [
+        [
+          {
+            "node": "Check Approval Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Approval Decision": {
+      "main": [
+        [
+          {
+            "node": "Run CRM Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6d3a3cf8-eaf9-4e9b-b480-3c39cadab808",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "23b36ea15f13856ccbe210d20171d39de2bd8cd2a47658ef3391b4160d9fda3e"
+  },
+  "id": "liqDqzbP8xjKCEFv",
+  "tags": []
+}
