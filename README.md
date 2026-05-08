@@ -29,6 +29,50 @@ Lead Input → Orchestrator (GPT-4o)
 
 **Key patterns:** Multi-agent orchestration, Postgres shared state bus, RAG via pgvector, multi-LLM routing, human-in-the-loop approval.
 
+## Lead Input — How to Trigger the System
+
+The Orchestrator is triggered by an n8n **Webhook node**. Any of the following methods will start the pipeline:
+
+### Option 1 — Direct API Call (recommended for testing)
+Send a POST request to your n8n webhook URL with the lead payload:
+
+```bash
+curl -X POST https://your-n8n-instance/webhook/lead-intelligence \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jane Smith",
+    "email": "jane@acmecorp.com",
+    "company": "Acme Corp",
+    "domain": "acmecorp.com",
+    "source": "LinkedIn"
+  }'
+```
+
+### Option 2 — Web Form (Tally / Typeform / n8n Form)
+Connect a Tally or Typeform form to the n8n webhook URL. Map the form fields to the payload structure above. The form submission fires the pipeline automatically.
+
+### Option 3 — CRM Trigger (HubSpot / Airtable)
+Set up a HubSpot workflow or Airtable automation that fires a webhook when a new contact is created. Map CRM fields to the same payload structure.
+
+### Option 4 — n8n Manual Trigger
+Use the **Test workflow** button in n8n with a hardcoded lead payload in the trigger node. Useful for development and debugging individual agents.
+
+---
+
+### Required Payload Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | string | Lead's full name |
+| `email` | string | Lead's email address |
+| `company` | string | Company name |
+| `domain` | string | Company website domain (used by Research Agent) |
+| `source` | string | Where the lead came from (LinkedIn, referral, event, etc.) |
+
+The Orchestrator writes this payload to the `lead_data` column in Postgres when it creates the session. All downstream agents read from that column.
+
+---
+
 ## Benefits
 
 | Benefit | Without This System | With This System |
