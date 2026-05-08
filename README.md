@@ -29,6 +29,37 @@ Lead Input → Orchestrator (GPT-4o)
 
 **Key patterns:** Multi-agent orchestration, Postgres shared state bus, RAG via pgvector, multi-LLM routing, human-in-the-loop approval.
 
+## Workflow Screenshots
+
+### Orchestrator
+![Orchestrator](docs/screenshots/P01%20-%20Lead%20Intelligence%20Orchestrator.png)
+
+### Research Agent
+![Research Agent](docs/screenshots/P01%20-%20Research%20Agent.png)
+
+### Scoring Agent
+![Scoring Agent](docs/screenshots/P01%20-%20Scoring%20Agent.png)
+
+### Personalisation Agent
+![Personalisation Agent](docs/screenshots/P01%20-%20Personalisation%20Agent.png)
+
+### CRM Agent
+![CRM Agent](docs/screenshots/P01%20-%20CRM%20Agent.png)
+
+### HITL Approval Handler
+![HITL Approval Handler](docs/screenshots/P01%20-%20HITL%20Approval%20Handler.png)
+
+### HITL Approval Email
+![HITL Approval Email](docs/screenshots/HLTL%20EMail%20message.png)
+
+### RAG Document Loader
+![RAG Document Loader](docs/screenshots/P01%20-%20RAG%20Document%20Loader.png)
+
+### Airtable CRM Output
+![Airtable](docs/screenshots/Airtable.png)
+
+---
+
 ## Lead Input — How to Trigger the System
 
 The Orchestrator is triggered by an n8n **Webhook node**. Any of the following methods will start the pipeline:
@@ -115,44 +146,11 @@ The Orchestrator writes this payload to the `lead_data` column in Postgres when 
 - **Wholesale/B2B lead qualification** — Score retailer enquiries against distribution criteria
 - **Influencer outreach** — Research influencers, score brand fit, generate personalised collaboration proposals
 
-## Workflow Screenshots
+## Architecture Decisions
 
-### Orchestrator
-![Orchestrator](docs/screenshots/P01%20-%20Lead%20Intelligence%20Orchestrator.png)
-
-### Research Agent
-![Research Agent](docs/screenshots/P01%20-%20Research%20Agent.png)
-
-### Scoring Agent
-![Scoring Agent](docs/screenshots/P01%20-%20Scoring%20Agent.png)
-
-### Personalisation Agent
-![Personalisation Agent](docs/screenshots/P01%20-%20Personalisation%20Agent.png)
-
-### CRM Agent
-![CRM Agent](docs/screenshots/P01%20-%20CRM%20Agent.png)
-
-### HITL Approval Handler
-![HITL Approval Handler](docs/screenshots/P01%20-%20HITL%20Approval%20Handler.png)
-
-### HITL Approval Email
-![HITL Approval Email](docs/screenshots/HLTL%20EMail%20message.png)
-
-### RAG Document Loader
-![RAG Document Loader](docs/screenshots/P01%20-%20RAG%20Document%20Loader.png)
-
-### Airtable CRM Output
-![Airtable](docs/screenshots/Airtable.png)
-
----
-
-## Why This Architecture Matters (Portfolio Value)
-
-This project demonstrates production-grade AI engineering patterns that interviewers look for:
-
-- **Multi-agent orchestration** — Not one monolithic prompt, but 5 agents with clear separation of concerns
-- **Shared state via Postgres** — Agents communicate through a database, not chained prompts — testable, debuggable, auditable
-- **RAG in a real context** — Vector search isn't a demo, it provides live business criteria to the scoring agent
-- **Multi-LLM routing** — Right model for the right job (Gemini for research volume, Claude for reasoning, GPT-4o for generation)
-- **Human-in-the-loop** — Shows understanding that production AI systems need human oversight
-- **Transferable pattern** — Same architecture works for support tickets, content pipelines, reporting systems, and more
+- **Multi-agent orchestration** — 5 agents with clear separation of concerns rather than one monolithic prompt. Each agent has a single responsibility and can be tested independently.
+- **Shared state via Postgres** — Agents communicate through a database, not chained prompts. Every step is persisted, auditable, and debuggable by checking which column is empty.
+- **RAG over hardcoded prompts** — ICP criteria live in a vector store, not in the system prompt. Updating scoring criteria means updating a document, not editing a workflow.
+- **Multi-LLM routing** — Each agent uses the model best suited to its task: GPT-4o-mini for high-volume research, Claude Sonnet for structured reasoning and scoring, GPT-4o for natural language generation.
+- **Human-in-the-loop before CRM write** — Automated outreach at scale carries brand risk. The approval gate keeps a human in the decision loop without slowing the research pipeline.
+- **Transferable pattern** — The same Orchestrator → Specialist Agents → Postgres → HITL structure applies to support ticket triage, content pipelines, reporting systems, and more.
