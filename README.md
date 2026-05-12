@@ -1,4 +1,4 @@
-# Project 01 — Multi-Agent Lead Intelligence System
+#  Multi-Agent Lead Intelligence System
 
 Automates lead research, scoring, personalised outreach, and CRM updates using a multi-agent n8n pipeline.
 
